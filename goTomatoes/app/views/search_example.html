@@ -1,12 +1,22 @@
 <html lang="en">
 <head>
+    
     <meta charset="utf-8" />
-    <title>jQuery UI Autocomplete - Default functionality</title>
+    <title>jQuery UI Autocomplete - Remote JSONP datasource</title>
     <link rel="stylesheet" href="http://code.jquery.com/ui/1.9.0/themes/base/jquery-ui.css" />
     <script src="http://code.jquery.com/jquery-1.8.2.js"></script>
     <script src="http://code.jquery.com/ui/1.9.0/jquery-ui.js"></script>
     <link rel="stylesheet" href="/resources/demos/style.css" />
-    <script>
+    <style>
+    .ui-autocomplete-loading {
+        background: white url('images/ui-anim_basic_16x16.gif') right center no-repeat;
+    }
+    #txtBusca { width: 25em; }
+    </style>
+
+<script>
+	
+	var globalUrl = 'http://suggestqueries.google.com/complete/search';
 
 	function createArrayOfSuggestions(m) {
 
@@ -17,52 +27,97 @@
 			suggestions[i] = suggestion[0];
 		}
 
-		console.log(suggestions);
 
 		return suggestions;
 
 	}
 
 	function retrieve(url) {
-
+		
 		$.ajax({
 			url: url,
+			async: 'false',
 			dataType: 'jsonp',
 			data: {
-			q: $( "#tags" ).val(),
+			q: $("#txtAutoSuggest").val(),
 			nolabels: 't',
 			client: 'psy',
 			ds: ''
 			},
 			success: function(data) {
+				console.log("debug 3");
 				var myMap = eval(data[1]);	
-				//console.log(myMap);
 				var suggestions = createArrayOfSuggestions(myMap);
-				console.log(suggestions);	
 				
-				$( "#tags" ).autocomplete({
-            				source: suggestions
-        			});		
-			
+				console.log(suggestions);
+				autoSuggest(suggestions);
+
 			}
 		}); 
- 
+
 	}	
 
-	function auto_complete_text(evt) {
+	function autoCompleteText() {
+		console.log("debug 1");
 		var url = 'http://suggestqueries.google.com/complete/search';
 		retrieve(url);
+		console.log("debug 2");
+		console.log(url);
 	}
+
+	function autoSuggest(data) {
+		console.log("oi");
+		$("#txtAutosuggest").autocomplete(data);
+	}
+
+
+    $(function() {
+ 
+        $( "#txtBusca" ).autocomplete({
+            source: function( request, response ) {
+                $.ajax({
+                    url: globalUrl,
+                    dataType: "jsonp",
+                    data: {
+			q: $( "#txtBusca" ).val(),
+			client: 'psy',
+			ds: '',
+                        featureClass: "P",
+                        style: "full",
+                        maxRows: 12,
+                        name_startsWith: request.term
+                    },
+                    success: function( data ) {
+			//alert(data);
+                        response( $.map( createArrayOfSuggestions(data[1]), function( item ) {
+                            return {
+                                label: $("<span>").html(item).text(),
+                                value: $("<span>").html(item).text()
+                            }
+                        }));
+
+                    }
+                });
+            },
+            minLength: 2,
+            open: function() {
+                $( this ).removeClass( "ui-corner-all" ).addClass( "ui-corner-top" );
+            },
+            close: function() {
+                $( this ).removeClass( "ui-corner-top" ).addClass( "ui-corner-all" );
+            }
+        });
+    });
+
 
     </script>
 </head>
 <body>
  
 <div class="ui-widget">
-    <label for="tags">Tags: </label>
-    <input id="tags" onkeyup="auto_complete_text()" />
+    <label for="txtBusca">Search: </label>
+    <input id="txtBusca" />
 </div>
- 
  
 </body>
 </html>
